@@ -1,0 +1,26 @@
+﻿column_name,data_type,required,unique,allowed_values,description
+sample_id,character,no,yes,*,"sample id, reported by pirbright in results files"
+animal_id,numeric,yes,no,>0,numeric animal id; repeated for repeated sampling across recapture
+unique_id,character,no,yes,*,"unique id, including date and animal id. Should be completed for the rest of the dataset, but don't think it is yet…"
+recap_no,numeric,no,no,NA|1|2|3|4,"recapture event; NA for mass capture, and counts subsequent returns to field to recapture animals. Reflects when capture occurred, but not necessarily the number of captures for that animal (see cap number for this data)"
+cap_number,numeric,yes,no,>0,Number of times a given animal has been captured
+firstcap_age,numeric,no,no,>0,"estimated age at first capture; when animals are recaptured, the same value is filled for all recaptures"
+est_age,numeric,no,no,>0,"estimated age at present capture, calculated using age at first capture + time since first capture"
+sex,character,no,no,male|female,sex of animal
+capture_date,character,no,no,*,"date of capture, formatted mm/dd/yyyy"
+capture_lat,numeric,no,no,> -26 & < -21,"latitude of capture, in decimal degress WGS84"
+capture_long,numeric,no,no,,"longitude of capture, in decimal degress WGS84"
+sample_type,character,yes,no,tonsil swab|probang,sample type used for sequencing
+qpcr_ct,numeric,no,no,>0 & < 50,"cycle threshold from rt qPCR performed at Pirbright. Negative values (non-detection) are assigned a cycle threshold of 45. 40 is considered a negative sample, 30-40 is a weak positive, and 30 is a strong positive"
+qpcr_pos,boolean,no,no,0|1,positive from rt qPCR performed at Pirbright
+vi_pos,boolean,no,no,0|1,viral isolation positive from Pirbright
+sat1_elisa_pi,numeric,no,no,>0,"percent inhibition for SAT1 SPCE, performed at AVR"
+sat1_elisa_pos,boolean,no,no,0|1,positive from SAT1 SPCE; positive cutoff >50
+sat2_elisa_p1,numeric,no,no,>0,"percent inhibition for SAT2 SPCE, performed at AVR"
+sat2_elisa_pos,boolean,no,no,0|1,positive from SAT2 SPCE; positive cutoff >50
+sat3_elisa_pi,numeric,no,no,>0,"percent inhibition for SAT3 SPCE, performed at AVR"
+sat3_elisa_pos,boolean,no,no,0|1,positive from SAT3 SPCE; positive cutoff >50
+nsp_elisa_pi,numeric,no,no,>0,"non-structural protein elisa percent inhibition, performed at AVR"
+nsp_elisa_pos,boolean,no,no,0|1,positive from NSP ELISA; positive cutoff >50
+avr_qpcr_ct,numeric,no,no,>0,"cycle threshold from rt qPCR performed at AVR. Negative values (non-detection) are assigned a cycle threshold of 0. 34.5(?) is considered a negative sample, <=34 is a positive sample"
+acr_qpcr_pos,boolean,no,no,0|1,"cycle threshold from rt qPCR performed at AVR. Negative values (non-detection) are assigned a cycle threshold of 45. 40 is considered a negative sample, 30-40 is a weak positive, and 30 is a strong positive"
