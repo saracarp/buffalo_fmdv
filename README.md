@@ -2,7 +2,7 @@
 Buffalo fmdv projects during ORISE postdoc:
 
 *Stochastic model of FMDv reinfection dynamics in buffalo*
-1. Demonstrate the simplified model, which excludes explicit age & sex demographics, exposure period, and uses explonential vs gamma distributions, retrieves same outcomes as models in Jolles et al. 2021
+1. Demonstrate the simplified model, which excludes explicit age & sex demographics, seasonal birth pulse, exposure period, and uses exponential vs gamma distributions, retrieves same outcomes as models in Jolles et al. 2021
 2. Add reinfection dynamics--probabilities of carrier state, time spend in carrier state, and time to loss of antibodies is different for first infection and 2+ infections
 Working with: Jan Medlock, Anna Jolles, Brianna Beechler; from deterministic model of reinfections by Precious Chiwira, Hayriye Gulbudak, and Jan Medlock
 
