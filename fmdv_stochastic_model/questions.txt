@@ -1,0 +1,22 @@
+Ongoing list of questions:
+
+Ricardo marks nine events: Birth, Death, Waning, Infection, Progression, Recovery_acute, Recovery_carrier, Protection_loss, Protection_gain
+
+Current model: Recovery is a dead end
+
+Precious model: Remove progression (exposed class), and separate into Infection1, Carrier1, Recovery1 vs Infection2, Carrier2, Recovery2.
+- Do you need to move through 'Lost immunity' to get to Infection2?
+
+
+Anna and Bree questions:
+Other paper from "old chronic experiment":
+1. we got transmission from carriers
+2. we can make a transmission network (done by Pirbright?)
+3. can we find why carriers transmitted when they did (is it rando, or result of stress, change in viral titer, etc.)
+
+
+Data driving precious model:
+SAT1 only (dugo paper)?
+Does new experiment give information on other SATs during 2nd comingling?
+Are you less likely to become a carrier of a 2nd SAT if you are already carrying one SAT?
+
