@@ -12,7 +12,7 @@ pacman::p_load(tidyverse,
 
 
 
-loc <- "C:/Users/sarac/Desktop/buffalo"
+loc <- "C:/Users/sarac/Desktop/fmdv/buffalo_fmdv/fmdv_age_epi"
 
 #############################
 # Clean up, merge, and subset data
@@ -48,6 +48,7 @@ test_dat <- read.csv(here(loc, "dat_from_bree/masscap_elisa.csv"))
 all_caps$animal_id <- as.character(all_caps$animal_id)
 #swab_dat$capture_num <- ifelse(is.na(swab_dat$recap_no) ==TRUE, 0, swab_dat$recap_n)
 test_dat$animal_id <- as.character(test_dat$animal_id)
+#swab_dat$vi[swab_dat$vi==""] <- "NO"
 
 swab_dat <- dplyr::full_join(swab_dat, all_caps) %>%
   dplyr::full_join(test_dat) 
@@ -57,7 +58,7 @@ str(swab_dat)
 
 swab_dat <- swab_dat %>%
   dplyr::mutate(ts_pir_vi = case_when(vi == "YES" | vi == "yes" ~ 1,
-                                      is.na(vi) == TRUE ~ 0),
+                                      vi == "" ~ 0),
                 ts_pir_qpcr_interp = dplyr::case_when(rt_qpcr <= 30 ~ 'strong_pos',
                                               rt_qpcr > 30 & rt_qpcr <= 40 ~ 'weak_pos',
                                               rt_qpcr > 40 ~ 'neg',
@@ -124,14 +125,14 @@ swab_dat <- swab_dat %>%
 
 str(swab_dat)
 
-write.csv(swab_dat, here(loc, "fmdv_detection_dat.csv"), row.names = FALSE)
+write.csv(swab_dat, here(loc, "clean_dat/fmdv_detection_dat.csv"), row.names = FALSE)
 
 #############################
 # read the data back in & make some wuick subsets
 #############################
 rm(list=ls())
-loc <- "C:/Users/sarac/Desktop/buffalo"
-dat <- read.csv(here(loc, "fmdv_detection_dat.csv"))
+loc <- "C:/Users/sarac/Desktop/fmdv/buffalo_fmdv/fmdv_age_epi"
+dat <- read.csv(here(loc, "clean_dat/fmdv_detection_dat.csv"))
 dat$capture_date <- as.Date(dat$capture_date)
 
 dat_sub <- dat %>%
@@ -187,6 +188,23 @@ dat %>%
                    max = max(sat3_elisa_pi, na.rm = TRUE)) %>%
   flextable::flextable()
 
+
+dat_first %>% 
+  janitor::tabyl(ts_pir_qpcr_pos, ts_pir_vi)
+dat_first %>% 
+  janitor::tabyl(ts_pir_qpcr_interp, ts_pir_vi)
+
+summary(as.factor(dat_first$sat1_elisa_pos))
+summary(as.factor(dat_first$sat2_elisa_pos))
+summary(as.factor(dat_first$sat3_elisa_pos))
+summary(as.factor(dat_first$nsp_elisa_pos))
+
+dat_first %>% 
+  janitor::tabyl(nsp_elisa_pos, sat1_elisa_pos)
+dat_first %>% 
+  janitor::tabyl(nsp_elisa_pos, sat2_elisa_pos)
+dat_first %>% 
+  janitor::tabyl(nsp_elisa_pos, sat3_elisa_pos)
 
 #############################
 # Some quick figures just for fun
@@ -246,7 +264,7 @@ plot <- ggplot() +
       plot.title = element_text(size = 22, face = "bold", hjust = 0.5)
     )
   
-ggsave(file.path(here(loc, "qpcr_plot.png")), plot = plot, width = 12, height = 18, units = "in", dpi = 700)
+ggsave(file.path(here(loc, "outputs/figs/qpcr_plot.png")), plot = plot, width = 12, height = 18, units = "in", dpi = 700)
 
 
 dat_series <- dat_sub %>%
@@ -267,6 +285,23 @@ summary(as.factor(dat_series$firstcap_age))
 ggplot(dat_series, aes(x = capture_age, y = ts_pir_qpcr_ct, color = capture_num, group = animal_id)) +
   geom_line() +
   geom_point() +
+  theme_bw()
+
+
+ggplot(dat_first, aes(x = capture_age, y = sat1_elisa_pi, color = as.factor(sat1_elisa_pos))) +
+  geom_point(position = "jitter") +
+  theme_bw()
+
+ggplot(dat_first, aes(x = capture_age, y = sat2_elisa_pi, color = as.factor(sat2_elisa_pos))) +
+  geom_point(position = "jitter") +
+  theme_bw()
+
+ggplot(dat_first, aes(x = capture_age, y = sat3_elisa_pi, color = as.factor(sat3_elisa_pos))) +
+  geom_point(position = "jitter") +
+  theme_bw()
+
+ggplot(dat_first, aes(x = capture_age, y = nsp_elisa_pi, color = as.factor(nsp_elisa_pos))) +
+  geom_point(position = "jitter") +
   theme_bw()
 
 
@@ -323,11 +358,6 @@ fit11 <- mgcv::gam(ts_pir_qpcr_pos ~ s(capture_age) + s(capture_lat), data = dat
 summary(fit11)
 
 
-ggplot(dat_first, aes(x = capture_age, y = ts_pir_qpcr_pos, color = ts_pir_qpcr_pos)) +
-  geom_point() +
-  geom_line(aes(y = fitted(fit11)), color = 'blue') +
-  theme_bw()
-
 par(mfrow = c(1,2))
 plot(fit11, all.terms = TRUE)
 
@@ -341,70 +371,75 @@ vis.gam(fit12, view = c("firstcap_age","capture_lat"),
         theta = 50, n.grid = 50, lwd = 0.2)
 
 
+fit13 <- mgcv::gam(ts_pir_qpcr_pos ~ s(capture_age, capture_lat), data = dat_sub, family = binomial)
+summary(fit13)
+par(mfrow = c(1,1))
+plot(fit13, page = 1, scheme = 2)
 
 
 
-swab_series <- swab_dat_sub %>%
+
+fit20 <- mgcv::gam(ts_pir_vi ~ s(capture_age), data = dat_first, family = binomial)
+summary(fit20)
+fit21 <- mgcv::gam(ts_pir_vi ~ s(capture_age) + s(capture_lat), data = dat_first, family = binomial)
+summary(fit21)
+
+
+par(mfrow = c(1,2))
+plot(fit21, all.terms = TRUE)
+
+AIC(fit20, fit21)
+
+fit22 <- mgcv::gam(ts_pir_vi ~ s(firstcap_age, capture_lat), data = dat_first, family = binomial)
+summary(fit22)
+AIC(fit21, fit22)
+par(mfrow = c(1,1))
+plot(fit22, page = 1, scheme = 2)
+vis.gam(fit22, view = c("firstcap_age","capture_lat"),
+        theta = 50, n.grid = 50, lwd = 0.2)
+
+
+
+fit23 <- mgcv::gam(ts_pir_vi ~ s(capture_age, capture_lat), data = dat_sub, family = binomial)
+summary(fit23)
+par(mfrow = c(1,1))
+plot(fit23, page = 1, scheme = 2)
+
+
+dat_series <- dat_sub %>%
   group_by(animal_id) %>%
   filter(n() > 1) %>%
   ungroup()
 
-swab_series <- swab_series %>%
-  dplyr::arrange(capture_date) %>%
-  dplyr::group_by(animal_id) %>%
-  dplyr::mutate(capt_num = row_number()) %>%
-  dplyr::ungroup() 
-
-swab_series2 <- swab_series %>%
-  dplyr::select(animal_id, ts_pir_qpcr_ct, capture_date, firstcap_age, capt_num) %>%
-  tidyr::pivot_wider(id_cols = c("animal_id","firstcap_age"), names_from = "capt_num", values_from = c("ts_pir_qpcr_ct","capture_date")) %>%
-  dplyr::mutate(cap_age_1 = firstcap_age,
-                cap_age_2 = as.numeric(difftime(capture_date_2, capture_date_1, units = "days"))/365 + firstcap_age,
-                cap_age_3 = as.numeric(difftime(capture_date_3, capture_date_1, units = "days"))/365 + firstcap_age,
-                cap_age_4 = as.numeric(difftime(capture_date_4, capture_date_1, units = "days"))/365  + firstcap_age,
-                cap_age_5 = as.numeric(difftime(capture_date_5, capture_date_1, units = "days"))/365  + firstcap_age) %>%
-  tidyr::pivot_longer(cols = matches("^(ts_pir_qpcr_ct|capture_date|cap_age)_\\d$"),
-                      names_to = c(".value", "cap_num"),
-                      names_pattern = "(.*)_(\\d+)") %>%
-  na.omit() %>%
-  dplyr::mutate(pcr_interp = dplyr::case_when(ts_pir_qpcr_ct <= 30 ~ 'strong_pos',
-                                              ts_pir_qpcr_ct > 30 & ts_pir_qpcr_ct <= 40 ~ 'weak_pos',
-                                              ts_pir_qpcr_ct > 40 ~ 'neg'),
-                pcr_pos = dplyr::case_when(ts_pir_qpcr_ct <= 40 ~ 1,
-                                           ts_pir_qpcr_ct > 40 ~ 0),
-                season = dplyr::case_when(month(capture_date) < 8 ~ "Fall",
-                                          month(capture_date) > 8 ~ "Spring"))
+str(dat_series)
 
 
-ggplot(swab_series2, aes(x = cap_age, y = ts_pir_qpcr_ct, color = cap_num, group = animal_id)) +
+ggplot(dat_series, aes(x = capture_age, y = ts_pir_qpcr_ct, color = as.factor(capture_num), group = animal_id)) +
   geom_line() +
   geom_point() +
   theme_bw()
 
-ggplot(swab_series2, aes(x = cap_age, y = ts_pir_qpcr_ct, color = pcr_pos, group = animal_id)) +
+ggplot(dat_series, aes(x = capture_num, y = ts_pir_qpcr_ct, color = ts_pir_qpcr_interp, group = animal_id)) +
+  geom_line() +
+  geom_point() +
+  theme_bw()
+
+ggplot(dat_series, aes(x = capture_age, y = ts_pir_qpcr_ct, color = ts_pir_qpcr_interp, group = animal_id)) +
   geom_line() +
   geom_point() +
   theme_bw()
 
 
-pcr_mat <- swab_series %>%
+pcr_mat <- dat_series %>%
   dplyr::group_by(animal_id) %>%
-  dplyr::distinct(recap_no, .keep_all = TRUE) %>%
+  dplyr::distinct(capture_num, .keep_all = TRUE) %>%
+  dplyr::filter(is.na(ts_pir_qpcr_interp) == FALSE) %>%
+  dplyr::filter(n() > 1) %>%
   dplyr::ungroup() %>%
-  dplyr::select(c(animal_id, ts_pir_qpcr_ct, firstcap_age, recap_no)) %>%
-  dplyr::arrange(recap_no) %>%
+  dplyr::select(c(animal_id, ts_pir_qpcr_interp, firstcap_age, capture_num)) %>%
+  dplyr::arrange(capture_num) %>%
   dplyr::arrange(firstcap_age) %>%
-  dplyr::mutate(ts = dplyr::case_when(ts_pir_qpcr_ct <= 30 ~ 1,
-                                              ts_pir_qpcr_ct > 30 & ts_pir_qpcr_ct <= 40 ~ 2,
-                                              ts_pir_qpcr_ct > 40 ~ 3)) %>%
   tidyr::pivot_wider(id_cols = c("animal_id","firstcap_age"), names_from = "capture_num", names_prefix = "cap_", values_from = c("ts_pir_qpcr_interp"), names_sort = TRUE) %>%
-  dplyr::group_by(animal_id) %>% 
-  dplyr::summarise(firstcap_age = mean(firstcap_age, na.rm = TRUE),
-                   "cap_0" = mean(cap_0, na.rm = TRUE),
-                   "cap_1" = mean(cap_1, na.rm = TRUE),
-                   "cap_2" = mean(cap_2, na.rm = TRUE),
-                   "cap_3" = mean(cap_3, na.rm = TRUE),
-                   "cap_4" = mean(cap_4, na.rm = TRUE)) %>%
   dplyr::arrange(firstcap_age) 
 
 pcr_mat %>%
@@ -412,7 +447,7 @@ pcr_mat %>%
   dplyr::summarise(n = n()) %>%
   dplyr::filter(n > 1L)
 
-pcr_mat[pcr_mat==0] <- NA
+#pcr_mat[pcr_mat==0] <- NA
 age <- pcr_mat$firstcap_age
 pcr_mat <- tibble::column_to_rownames(pcr_mat, "animal_id") %>%
   dplyr::select(-c(firstcap_age))
@@ -422,7 +457,7 @@ pcr_mat <- as.matrix(pcr_mat)
 map_pcr <- ComplexHeatmap::Heatmap(pcr_mat, 
                                     cluster_rows = FALSE, 
                                     cluster_columns = FALSE,
-                                    col = c("darkred", "red3", "gray60"), na_col = "white",
+                                    col = c("strong_pos" = "darkred", "weak_pos" = "red3", "neg" = "gray60"), na_col = "white",
                                     #rect_gp = gpar(col = "gray20", lwd = 1),
                                     show_heatmap_legend = FALSE,
                                     row_title_gp = gpar(fontsize = 10),
@@ -446,9 +481,153 @@ lgd_pos <- ComplexHeatmap::Legend(title = "Detection",
                                   grid_width = unit(0.25, "cm"))
 hm_comb <- ComplexHeatmap::draw(map_pcr,  annotation_legend_list = lgd_pos) 
 
-tiff(here(loc,"qpcr_heatmap.tiff"), res = 600, width = 14, height = 24, units = "cm" )
+tiff(here(loc,"outputs/figs/qpcr_heatmap.tiff"), res = 600, width = 14, height = 24, units = "cm" )
 hm_comb
 dev.off()
+
+pcr_mat <- dat_series %>%
+  dplyr::group_by(animal_id) %>%
+  dplyr::distinct(capture_num, .keep_all = TRUE) %>%
+  dplyr::filter(is.na(ts_pir_qpcr_interp) == FALSE) %>%
+  dplyr::filter(n() > 1) %>%
+  dplyr::ungroup() %>%
+  dplyr::select(c(animal_id, ts_pir_qpcr_interp, firstcap_age, capture_age)) %>%
+  dplyr::arrange(capture_age) %>%
+  dplyr::arrange(firstcap_age) %>%
+  dplyr::mutate(capture_age_cat = dplyr::case_when(capture_age <1 ~ "< 1",
+                                                   capture_age >=1 & capture_age <1.25 ~ "1-1.25",
+                                                   capture_age >=1.25 & capture_age <1.5 ~ "1.25-1.5",
+                                                   capture_age >=1.5 & capture_age <1.75 ~ "1.5-1.75",
+                                                   capture_age >=1.75 & capture_age <2 ~ "1.75-2",
+                                                   capture_age >=2 & capture_age <2.25 ~ "2-2.25",
+                                                   capture_age >=2.25 & capture_age <2.5 ~ "2.25-2.5",
+                                                   capture_age >=2.5 & capture_age <2.75 ~ "2.5-2.75",
+                                                   capture_age >=2.75 & capture_age <3 ~ "2.75-3",
+                                                   capture_age >=3 & capture_age <3.25 ~ "3-3.25",
+                                                   capture_age >=3.25 & capture_age <3.5 ~ "3.25-3.5",
+                                                   capture_age >=3.5 ~ "3.5+")) %>%
+  tidyr::pivot_wider(id_cols = c("animal_id","firstcap_age"), names_from = "capture_age_cat", names_prefix = "cap_", values_from = c("ts_pir_qpcr_interp"), names_sort = TRUE) %>%
+  dplyr::arrange(firstcap_age) 
+
+pcr_mat %>%
+  dplyr::group_by(animal_id) %>%
+  dplyr::summarise(n = n()) %>%
+  dplyr::filter(n > 1L)
+
+#pcr_mat[pcr_mat==0] <- NA
+age <- pcr_mat$firstcap_age
+pcr_mat <- tibble::column_to_rownames(pcr_mat, "animal_id") %>%
+  dplyr::select(-c(firstcap_age))
+pcr_mat <- as.matrix(pcr_mat)
+
+# make all the heatmaps
+map_pcr <- ComplexHeatmap::Heatmap(pcr_mat, 
+                                   cluster_rows = FALSE, 
+                                   cluster_columns = FALSE,
+                                   col = c("strong_pos" = "darkred", "weak_pos" = "red3", "neg" = "gray60"), na_col = "white",
+                                   #rect_gp = gpar(col = "gray20", lwd = 1),
+                                   show_heatmap_legend = FALSE,
+                                   row_title_gp = gpar(fontsize = 10),
+                                   row_names_side = "left", row_names_gp = gpar(fontsize = 8),
+                                   show_row_names =  FALSE,
+                                   left_annotation = rowAnnotation(Age = age), 
+                                   #                               simple_anno_size = unit(2, "mm"), show_annotation_name = FALSE, border = TRUE),
+                                   column_title = "qPCR status", column_title_side = "top",
+                                   column_title_gp = gpar(fontsize = 16, hjust = 0),
+                                   column_names_rot = 45,
+                                   column_names_gp = gpar(fontsize = 12))
+
+map_pcr
+
+lgd_pos <- ComplexHeatmap::Legend(title = "Detection",
+                                  title_gp = gpar(fontsize = 12),
+                                  labels = c("Strong positive", "Weak positve", "No detection"),
+                                  labels_gp = gpar(fontsize = 10),
+                                  legend_gp = gpar(fill = c("darkred", "red3", "gray60")),
+                                  grid_height = unit(0.25, "cm"),
+                                  grid_width = unit(0.25, "cm"))
+hm_comb <- ComplexHeatmap::draw(map_pcr,  annotation_legend_list = lgd_pos) 
+
+
+
+
+
+ggplot(dat_series, aes(x = capture_age, y = ts_pir_vi, color = as.factor(capture_num), group = animal_id)) +
+  geom_line() +
+  geom_point() +
+  theme_bw()
+
+ggplot(dat_series, aes(x = capture_date, y = ts_pir_vi, color = (ts_pir_vi), group = animal_id)) +
+  geom_line() +
+  geom_point() +
+  theme_bw()
+
+
+vi_mat <- dat_series %>%
+  dplyr::group_by(animal_id) %>%
+  dplyr::distinct(capture_num, .keep_all = TRUE) %>%
+  dplyr::filter(is.na(ts_pir_qpcr_interp) == FALSE) %>%
+  dplyr::filter(n() > 1) %>%
+  dplyr::ungroup() %>%
+  dplyr::select(c(animal_id, ts_pir_vi, firstcap_age, capture_num)) %>%
+  dplyr::arrange(capture_num) %>%
+  dplyr::arrange(firstcap_age) %>%
+  tidyr::pivot_wider(id_cols = c("animal_id","firstcap_age"), names_from = "capture_num", names_prefix = "cap_", values_from = c("ts_pir_vi"), names_sort = TRUE) %>%
+  dplyr::arrange(firstcap_age) 
+
+vi_sums <- vi_mat %>%
+  tibble::column_to_rownames("animal_id") %>%
+  dplyr::select(dplyr::starts_with("cap"))%>%
+  dplyr::rowwise() %>%
+  dplyr::mutate(row_sum  = sum(c_across(starts_with("cap")), na.rm = TRUE),
+                row_n =  sum(c_across(starts_with("cap")) >= 0, na.rm = TRUE),
+                prop_pos = row_sum / row_n)
+head(vi_sums)
+
+vi_mat %>%
+  dplyr::group_by(animal_id) %>%
+  dplyr::summarise(n = n()) %>%
+  dplyr::filter(n > 1L)
+
+#vi_mat[vi_mat==0] <- NA
+age <- vi_mat$firstcap_age
+vi_mat <- tibble::column_to_rownames(vi_mat, "animal_id") %>%
+  dplyr::select(-c(firstcap_age))
+vi_mat <- as.matrix(vi_mat)
+
+# make all the heatmaps
+map_vi <- ComplexHeatmap::Heatmap(vi_mat, 
+                                   cluster_rows = FALSE, 
+                                   cluster_columns = FALSE,
+                                   col = c("gray60", "darkred"), na_col = "white",
+                                   #rect_gp = gpar(col = "gray20", lwd = 1),
+                                   show_heatmap_legend = FALSE,
+                                   row_title_gp = gpar(fontsize = 10),
+                                   row_names_side = "left", row_names_gp = gpar(fontsize = 8),
+                                   show_row_names =  FALSE,
+                                   left_annotation = rowAnnotation(Age = age), 
+                                   #                               simple_anno_size = unit(2, "mm"), show_annotation_name = FALSE, border = TRUE),
+                                   column_title = "VI status", column_title_side = "top",
+                                   column_title_gp = gpar(fontsize = 16, hjust = 0),
+                                   column_names_rot = 45,
+                                   column_names_gp = gpar(fontsize = 12))
+
+map_vi
+
+lgd_pos <- ComplexHeatmap::Legend(title = "Detection",
+                                  title_gp = gpar(fontsize = 12),
+                                  labels = c("Positive", "No detection"),
+                                  labels_gp = gpar(fontsize = 10),
+                                  legend_gp = gpar(fill = c("darkred", "gray60")),
+                                  grid_height = unit(0.25, "cm"),
+                                  grid_width = unit(0.25, "cm"))
+hm_comb <- ComplexHeatmap::draw(map_vi,  annotation_legend_list = lgd_pos) 
+
+tiff(here(loc,"outputs/figs/vi_heatmap.tiff"), res = 600, width = 14, height = 24, units = "cm" )
+hm_comb
+dev.off()
+
+
 
 fit22 <-  mgcv::gam(pcr_pos ~ s(cap_age) + season, data = dat_first, family = binomial)
 summary(fit12)
@@ -456,4 +635,74 @@ par(mfrow = c(1,1))
 plot(fit12, page = 1, scheme = 2)
 vis.gam(fit12, view = c("capture_lat","firstcap_age"),
         theta = 50, n.grid = 50, lwd = 0.2)
+
+
+
+
+
+
+dat_first <- dat_first %>%
+  dplyr::mutate(sat1_elisa_bin = dplyr::case_when(sat1_elisa_pos > 0 ~ 1,
+                                                  sat1_elisa_pos == 0 ~ 0),
+                sat2_elisa_bin = dplyr::case_when(sat2_elisa_pos > 0 ~ 1,
+                                                  sat2_elisa_pos == 0 ~ 0),
+                sat3_elisa_bin = dplyr::case_when(sat3_elisa_pos > 0 ~ 1,
+                                                  sat3_elisa_pos == 0 ~ 0)) 
+
+# SAT1 ELISA
+
+fit30 <- mgcv::gam(sat1_elisa_bin ~ s(capture_age), data = dat_first, family = binomial)
+summary(fit30)
+fit31 <- mgcv::gam(sat1_elisa_bin ~ s(capture_age) + s(capture_lat), data = dat_first, family = binomial)
+summary(fit31)
+par(mfrow = c(1,2))
+plot(fit31, all.terms = TRUE)
+
+AIC(fit30, fit31)
+
+fit32 <- mgcv::gam(sat1_elisa_bin ~ s(firstcap_age, capture_lat), data = dat_first, family = binomial)
+summary(fit32)
+AIC(fit31, fit32)
+par(mfrow = c(1,1))
+plot(fit32, page = 1, scheme = 2)
+
+
+
+# SAT2 ELISA
+
+fit30 <- mgcv::gam(sat2_elisa_bin ~ s(capture_age), data = dat_first, family = binomial)
+summary(fit30)
+fit31 <- mgcv::gam(sat2_elisa_bin ~ s(capture_age) + s(capture_lat), data = dat_first, family = binomial)
+summary(fit31)
+par(mfrow = c(1,2))
+plot(fit31, all.terms = TRUE)
+
+AIC(fit30, fit31)
+
+fit32 <- mgcv::gam(sat2_elisa_bin ~ s(firstcap_age, capture_lat), data = dat_first, family = binomial)
+summary(fit32)
+AIC(fit31, fit32)
+par(mfrow = c(1,1))
+plot(fit32, page = 1, scheme = 2)
+
+
+
+# SAT3 ELISA
+
+fit30 <- mgcv::gam(sat3_elisa_bin ~ s(capture_age), data = dat_first, family = binomial)
+summary(fit30)
+fit31 <- mgcv::gam(sat3_elisa_bin ~ s(capture_age) + s(capture_lat), data = dat_first, family = binomial)
+summary(fit31)
+par(mfrow = c(1,2))
+plot(fit31, all.terms = TRUE)
+
+AIC(fit30, fit31)
+
+fit32 <- mgcv::gam(sat3_elisa_bin ~ s(firstcap_age, capture_lat), data = dat_first, family = binomial)
+summary(fit32)
+AIC(fit31, fit32)
+par(mfrow = c(1,1))
+plot(fit32, page = 1, scheme = 2)
+
+
 
