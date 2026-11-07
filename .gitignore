@@ -1,4 +1,4 @@
 /fmdv_age_epi/outputs/figs*
 /fmdv_age_epi/dat_from_bree/*
 /fmdv_age_epi/clean_dat/fmdv_detection_dat.csv
-
+/fmdv_stochastic_model/.ipynb_checkpoints*
