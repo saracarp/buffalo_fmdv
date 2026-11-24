@@ -1,0 +1,27 @@
+{
+  "birth_mean_waiting_time": 1602.35,
+  "death_mean_waiting_time": 1602.35,
+  "waning_mean_waiting_time": 135.1425,
+
+  "acute_transmission_rate": 2.8,
+  "carrier_transmission_rate": 0.028,
+  "progression_mean_waiting_time": 0.5,
+  "recovery_mean_waiting_time": 5.7,
+  "carrier_probability": 0.9,
+  "carrier_recovery_mean_waiting_time": 243,
+
+  "states": ["maternal_immunity","susceptible",
+          "exposed","infectious",
+          "carrier_1","carrier_2","carrier_3",
+          "recovered"],
+
+  "p_start": [0.06156, 0.219052, 0.027334, 0.692054],
+
+  "seed": 87,
+  "n_buff": 1000,
+  "n_inf": 2,
+  "n_yrs": 10,
+  "n_reps": 500,
+
+  "output_file": "outputs/sat1"
+}
